@@ -229,6 +229,7 @@ export interface GalaxyServer {
 }
 
 export interface CreateGalaxyServerRequest {
+  validate_certs?: boolean | null;
   name: string;
   url: string;
   token?: string;
@@ -236,6 +237,7 @@ export interface CreateGalaxyServerRequest {
 }
 
 export interface UpdateGalaxyServerRequest {
+  validate_certs?: boolean | null;
   name?: string;
   url?: string;
   token?: string;

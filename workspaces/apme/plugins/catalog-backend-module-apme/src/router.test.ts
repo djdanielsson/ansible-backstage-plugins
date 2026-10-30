@@ -68,6 +68,55 @@ describe('catalog-backend-module-apme router', () => {
   let settingsPath: string;
   let portalSettingsStore: ApmePortalSettingsStore;
 
+  it('authorizes shared graph access before contacting the Gateway', async () => {
+    authorizeProjectOperation.mockRejectedValueOnce(
+      new NotAllowedError('Denied'),
+    );
+    (global.fetch as jest.Mock).mockReset();
+    const response = await request(app).get(
+      '/apme/shared/projects/proj-1/graph',
+    );
+    expect(response.status).toBe(403);
+    expect(authorizeProjectOperation).toHaveBeenCalledWith('proj-1', {}, false);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('preserves certificate policy when updating a Galaxy server', async () => {
+    mockApmeService.updateGalaxyServer.mockResolvedValue({
+      id: 1,
+      name: 'hub',
+      validate_certs: null,
+    });
+    const response = await request(app)
+      .patch('/apme/settings/galaxy-servers/1')
+      .send({ validate_certs: null });
+    expect(response.status).toBe(200);
+    expect(mockApmeService.updateGalaxyServer).toHaveBeenCalledWith(1, {
+      validate_certs: null,
+    });
+  });
+
+  it('rejects an invalid certificate policy rather than silently dropping it', async () => {
+    const response = await request(app)
+      .patch('/apme/settings/galaxy-servers/1')
+      .send({ validate_certs: 'false' });
+    expect(response.status).toBe(400);
+    expect(mockApmeService.updateGalaxyServer).not.toHaveBeenCalled();
+  });
+
+  it('rejects activity outside the authorized project', async () => {
+    (global.fetch as jest.Mock).mockReset().mockResolvedValue({
+      ok: true,
+      json: async () => ({ project_id: 'other-project', scan_id: 'scan' }),
+    });
+    const response = await request(app).get(
+      '/apme/shared/projects/proj-1/activity/scan',
+    );
+    expect(response.status).toBe(404);
+    expect(response.body).not.toHaveProperty('scan_id');
+    expect(authorizeProjectOperation).toHaveBeenCalledWith('proj-1', {}, false);
+  });
+
   beforeEach(async () => {
     jest.resetAllMocks();
     mockPermissions.authorize.mockResolvedValue([

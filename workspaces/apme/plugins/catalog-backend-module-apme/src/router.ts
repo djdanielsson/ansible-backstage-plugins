@@ -47,8 +47,18 @@ import { resolveIntegrationScmToken } from './resolveIntegrationScmToken';
 import { proxyProjectOperation } from './gatewayOperationProxy';
 import { createRequireSettingsManageMiddleware } from './requireSettingsManage';
 import { createRequireSettingsViewMiddleware } from './requireSettingsView';
+import { proxySharedData } from './sharedDataProxy';
 
 const GALAXY_SERVER_NAME_RE = /^[A-Za-z0-9_-]+$/;
+
+function certificatePolicy(body: Record<string, unknown>): {
+  validate_certs?: boolean | null;
+} {
+  if (!Object.prototype.hasOwnProperty.call(body, 'validate_certs')) return {};
+  if (body.validate_certs !== null && typeof body.validate_certs !== 'boolean')
+    throw new InputError('validate_certs must be boolean or null');
+  return { validate_certs: body.validate_certs };
+}
 
 /** Headers + optional body — avoids dual `@types/express` Request mismatches. */
 type ApmeHttpRequest = {
@@ -216,6 +226,113 @@ export async function createRouter(options: RouterOptions): Promise<Router> {
       false,
   });
 
+  // Lossless shared-package data routes. Existing Portal envelopes remain stable.
+  router.get('/apme/shared/rules', async (req, res) => {
+    await ensureUser(req);
+    await proxySharedData({
+      gatewayBaseUrl: await resolveEffectiveGatewayBaseUrl(),
+      path: '/rules',
+      response: res,
+    });
+  });
+  router.get(
+    '/apme/shared/ai/config',
+    requireApmeSettingsView,
+    async (_req, res) => {
+      await proxySharedData({
+        gatewayBaseUrl: await resolveEffectiveGatewayBaseUrl(),
+        path: '/ai/config',
+        response: res,
+      });
+    },
+  );
+  router.get(
+    '/apme/shared/ai/providers',
+    requireApmeSettingsView,
+    async (_req, res) => {
+      await proxySharedData({
+        gatewayBaseUrl: await resolveEffectiveGatewayBaseUrl(),
+        path: '/ai/providers',
+        response: res,
+      });
+    },
+  );
+  router.get(
+    '/apme/shared/ai/engines',
+    requireApmeSettingsView,
+    async (_req, res) => {
+      await proxySharedData({
+        gatewayBaseUrl: await resolveEffectiveGatewayBaseUrl(),
+        path: '/ai/engines',
+        response: res,
+      });
+    },
+  );
+  const sharedProjectData =
+    (suffix: string) =>
+    async (
+      req: {
+        method: string;
+        params: { projectId: string };
+        query: Record<string, unknown>;
+      },
+      res: Parameters<typeof proxySharedData>[0]['response'],
+    ) => {
+      await authorizeWorkflow(req);
+      const params = new URLSearchParams();
+      for (const key of [
+        'limit',
+        'offset',
+        'severity',
+        'rule_id',
+        'include_acknowledged',
+        'sort_by',
+        'order',
+      ]) {
+        const value = req.query[key];
+        if (typeof value === 'string') params.set(key, value);
+      }
+      await proxySharedData({
+        gatewayBaseUrl: await resolveEffectiveGatewayBaseUrl(),
+        path: `/projects/${encodeURIComponent(req.params.projectId)}${suffix}`,
+        query: params.size ? `?${params}` : '',
+        response: res,
+      });
+    };
+  router.get('/apme/shared/projects/:projectId', sharedProjectData(''));
+  router.get(
+    '/apme/shared/projects/:projectId/activity',
+    sharedProjectData('/activity'),
+  );
+  router.get(
+    '/apme/shared/projects/:projectId/violations',
+    sharedProjectData('/violations'),
+  );
+  router.get(
+    '/apme/shared/projects/:projectId/dependencies',
+    sharedProjectData('/dependencies'),
+  );
+  router.get(
+    '/apme/shared/projects/:projectId/graph',
+    sharedProjectData('/graph'),
+  );
+  router.get(
+    '/apme/shared/projects/:projectId/sbom',
+    sharedProjectData('/sbom'),
+  );
+  router.get(
+    '/apme/shared/projects/:projectId/activity/:scanId',
+    async (req, res) => {
+      await authorizeWorkflow(req);
+      await proxySharedData({
+        gatewayBaseUrl: await resolveEffectiveGatewayBaseUrl(),
+        path: `/activity/${encodeURIComponent(req.params.scanId)}`,
+        response: res,
+        verifyProjectId: req.params.projectId,
+      });
+    },
+  );
+
   router.get('/apme/health', async (req, res) => {
     await ensureUser(req);
     logger.debug('APME health check requested');
@@ -349,6 +466,7 @@ export async function createRouter(options: RouterOptions): Promise<Router> {
         assertSafeHttpUrl(auth_url, 'auth_url', outboundUrlOptions());
       }
       const server = await apmeService.createGalaxyServer({
+        ...certificatePolicy(req.body ?? {}),
         name: name.trim(),
         url: url.trim(),
         token: typeof token === 'string' ? token : undefined,
@@ -368,7 +486,13 @@ export async function createRouter(options: RouterOptions): Promise<Router> {
         throw new InputError('serverId must be a number');
       }
       const { name, url, token, auth_url } = req.body ?? {};
-      const body: Record<string, string> = {};
+      const body: {
+        name?: string;
+        url?: string;
+        token?: string;
+        auth_url?: string;
+        validate_certs?: boolean | null;
+      } = { ...certificatePolicy(req.body ?? {}) };
       if (typeof name === 'string') {
         if (!GALAXY_SERVER_NAME_RE.test(name.trim())) {
           throw new InputError('name must match [A-Za-z0-9_-]+');

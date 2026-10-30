@@ -1733,6 +1733,389 @@ paths:
         '409':
           description: Repository already registered
 
+  /apme/shared/ai/config:
+    get:
+      operationId: getSharedApmeAiConfig
+      summary: Lossless AI config response
+      description: Forwards the Gateway status and payload after settings-view authorization.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: Gateway AI administration response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Settings view denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/ai/providers:
+    get:
+      operationId: getSharedApmeAiProviders
+      summary: Lossless AI providers response
+      description: Forwards the Gateway status and payload after settings-view authorization.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: Gateway AI administration response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Settings view denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/ai/engines:
+    get:
+      operationId: getSharedApmeAiEngines
+      summary: Lossless AI engines response
+      description: Forwards the Gateway status and payload after settings-view authorization.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: Gateway AI administration response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Settings view denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/rules:
+    get:
+      operationId: getSharedApmeRules
+      summary: Lossless Gateway rule catalog
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}:
+    get:
+      operationId: getSharedApmeProject
+      summary: Authorized Gateway project details
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}/activity:
+    get:
+      operationId: getSharedApmeHistory
+      summary: Authorized paginated project history
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}/violations:
+    get:
+      operationId: getSharedApmeFindings
+      summary: Authorized project findings
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}/dependencies:
+    get:
+      operationId: getSharedApmeDependencies
+      summary: Authorized project dependencies
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}/graph:
+    get:
+      operationId: getSharedApmeGraph
+      summary: Authorized project content graph
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}/sbom:
+    get:
+      operationId: getSharedApmeSbom
+      summary: Authorized CycloneDX SBOM
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/vnd.cyclonedx+json:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /apme/shared/projects/{projectId}/activity/{scanId}:
+    get:
+      operationId: getSharedApmeActivity
+      summary: Authorized project-bound activity details
+      description: Preserves the Gateway response. Project routes enforce catalog access and APME entitlement before forwarding.
+      tags:
+        - APME
+      security:
+        - JWT: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: scanId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unmodified Gateway response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project or activity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /apme/health:
     get:
       operationId: getApmeHealth
@@ -1845,6 +2228,11 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              properties:
+                validate_certs:
+                  type: boolean
+                  nullable: true
+                  description: Null uses the deployment certificate policy.
       responses:
         '201':
           description: Galaxy server created
@@ -1882,6 +2270,11 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              properties:
+                validate_certs:
+                  type: boolean
+                  nullable: true
+                  description: Null uses the deployment certificate policy.
       responses:
         '200':
           description: Galaxy server updated
