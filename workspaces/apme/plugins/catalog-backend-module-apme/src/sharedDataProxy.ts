@@ -25,6 +25,7 @@ export async function proxySharedData(options: {
     verifyProjectId,
   } = options;
   const controller = new AbortController();
+  response.setHeader('Cache-Control', 'no-store');
   const timeout = setTimeout(() => controller.abort(), 60_000);
   const disconnect = () => controller.abort();
   response.on('close', disconnect);
